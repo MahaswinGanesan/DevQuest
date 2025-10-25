@@ -6,10 +6,10 @@ import { Users, Search, Plus, ArrowLeft } from "lucide-react";
 
 const Groups = () => {
   const groups = [
-    { id: 1, name: "Friends", members: 5, balance: "$45.00", tasks: 3, color: "bg-gradient-primary" },
-    { id: 2, name: "Roommates", members: 3, balance: "$120.50", tasks: 5, color: "bg-gradient-secondary" },
-    { id: 3, name: "Movie Club", members: 8, balance: "$0.00", tasks: 1, color: "bg-gradient-accent" },
-    { id: 4, name: "Study Group", members: 4, balance: "$25.00", tasks: 7, color: "bg-gradient-primary" },
+    { id: 1, name: "Friends", members: 5, balance: "$45.00", tasks: 3, polls: 2, color: "bg-gradient-primary" },
+    { id: 2, name: "Roommates", members: 3, balance: "$120.50", tasks: 5, polls: 1, color: "bg-gradient-secondary" },
+    { id: 3, name: "Movie Club", members: 8, balance: "$0.00", tasks: 1, polls: 0, color: "bg-gradient-accent" },
+    { id: 4, name: "Study Group", members: 4, balance: "$25.00", tasks: 7, polls: 0, color: "bg-gradient-primary" },
   ];
 
   return (
@@ -81,6 +81,10 @@ const Groups = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Pending Tasks</span>
                       <span className="font-semibold">{group.tasks}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Polls</span>
+                      <span className="font-semibold">{group.polls}</span>
                     </div>
                   </div>
                 </CardContent>

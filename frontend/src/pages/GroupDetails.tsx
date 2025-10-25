@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users, ArrowLeft, Plus, Mail, DollarSign, ImagePlus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const GroupDetails = () => {
@@ -16,6 +16,72 @@ const GroupDetails = () => {
   const { toast } = useToast();
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [memoryDescription, setMemoryDescription] = useState("");
+  // Polls state
+  type Poll = { id: string; question: string; options: { id?: string; text: string; votes?: number }[]; createdAt?: string };
+  const [polls, setPolls] = useState<Poll[]>([]);
+  const [loadingPolls, setLoadingPolls] = useState(false);
+  const [showPollDialog, setShowPollDialog] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [creatingPoll, setCreatingPoll] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchPolls();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const fetchPolls = async () => {
+    if (!id) return;
+    setLoadingPolls(true);
+    try {
+      const res = await fetch(`/api/groups/${id}/polls`);
+      if (!res.ok) throw new Error("Failed to load polls");
+      const data = await res.json();
+      setPolls(data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingPolls(false);
+    }
+  };
+
+  const addPollOption = () => setPollOptions((s) => [...s, ""]);
+  const updatePollOption = (index: number, value: string) =>
+    setPollOptions((s) => s.map((o, i) => (i === index ? value : o)));
+  const removePollOption = (index: number) =>
+    setPollOptions((s) => s.filter((_, i) => i !== index));
+
+  const handleCreatePoll = async () => {
+    if (!id) return;
+    const payload = {
+      question: pollQuestion.trim(),
+      options: pollOptions.map((o) => o.trim()).filter(Boolean),
+    };
+    if (!payload.question || payload.options.length < 2) {
+      toast({ title: "Invalid poll", description: "Enter a question and at least two options." });
+      return;
+    }
+    setCreatingPoll(true);
+    try {
+      const res = await fetch(`/api/groups/${id}/polls`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Create poll failed");
+      toast({ title: "Poll created", description: "Poll has been added to the group." });
+      setShowPollDialog(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      await fetchPolls();
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Failed to create poll." });
+    } finally {
+      setCreatingPoll(false);
+    }
+  };
 
   // Mock data
   const group = {
@@ -90,11 +156,13 @@ const GroupDetails = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          {/* make tabs responsive and match the actual number of triggers */}
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="splits">Splits</TabsTrigger>
             <TabsTrigger value="memories">Memories</TabsTrigger>
+            <TabsTrigger value="polls">Polls ({polls.length})</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -327,6 +395,72 @@ const GroupDetails = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Polls Tab */}
+          <TabsContent value="polls" className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">Group Polls</h3>
+              <Button variant="hero" size="sm" onClick={() => setShowPollDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Poll
+              </Button>
+            </div>
+
+            {loadingPolls ? (
+              <p>Loading polls...</p>
+            ) : polls.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No polls yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {polls.map((p) => (
+                  <Card key={p.id} className="shadow-md border-0">
+                    <CardHeader>
+                      <CardTitle className="text-base">{p.question}</CardTitle>
+                      <CardDescription className="text-xs">{p.createdAt}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {p.options.map((o, i) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span>{o.text}</span>
+                            <span className="text-muted-foreground">{o.votes ?? 0} votes</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Poll create dialog */}
+            <Dialog open={showPollDialog} onOpenChange={setShowPollDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Poll</DialogTitle>
+                  <DialogDescription>Add a question and options for the group poll</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 pt-4">
+                  <Input placeholder="Poll question" value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} />
+                  <div className="space-y-2">
+                    {pollOptions.map((opt, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input value={opt} onChange={(e) => updatePollOption(idx, e.target.value)} placeholder={`Option ${idx + 1}`} />
+                        {pollOptions.length > 2 && (
+                          <Button variant="ghost" onClick={() => removePollOption(idx)}>Remove</Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button variant="outline" onClick={addPollOption}>Add option</Button>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setShowPollDialog(false)}>Cancel</Button>
+                    <Button onClick={handleCreatePoll} disabled={creatingPoll}>{creatingPoll ? "Creating..." : "Create Poll"}</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
       </div>

@@ -1,9 +1,51 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Receipt, CheckSquare, Plus, Bell, Settings, LogOut } from "lucide-react";
 
 const Dashboard = () => {
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [pollGroup, setPollGroup] = useState<string>("Friends");
+
+  const addOption = () => setPollOptions((s) => [...s, ""]);
+  const updateOption = (index: number, value: string) =>
+    setPollOptions((s) => s.map((o, i) => (i === index ? value : o)));
+  const removeOption = (index: number) =>
+    setPollOptions((s) => s.filter((_, i) => i !== index));
+
+  const submitPoll = async () => {
+    const payload = {
+      question: pollQuestion.trim(),
+      options: pollOptions.map((o) => o.trim()).filter(Boolean),
+      group: pollGroup,
+    };
+
+    if (!payload.question || payload.options.length < 2) {
+      alert("Please enter a question and at least two non-empty options.");
+      return;
+    }
+
+    try {
+      // Placeholder: replace with your API call
+      await fetch("/api/polls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      // reset
+      setShowPollModal(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      setPollGroup("Friends");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create poll.");
+    }
+  };
+
   const quickStats = [
     { label: "Outstanding Balance", value: "$124.50", color: "text-accent" },
     { label: "Pending Tasks", value: "8", color: "text-primary" },
@@ -15,6 +57,8 @@ const Dashboard = () => {
     { type: "task", text: "Pick up groceries", group: "Roommates" },
     { type: "poll", text: "Weekend movie choice", group: "Movie Club" },
   ];
+
+  const groups = ["Friends", "Roommates", "Movie Club"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,7 +133,7 @@ const Dashboard = () => {
                   Groups
                 </Button>
               </Link>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowPollModal(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Poll
               </Button>
@@ -151,6 +195,68 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {showPollModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowPollModal(false)} />
+          <div className="bg-card rounded-lg p-6 z-10 w-full max-w-lg shadow-lg">
+            <h3 className="text-lg font-semibold mb-3">Create New Poll</h3>
+            <div className="space-y-3">
+              <input
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                placeholder="Poll question"
+                className="w-full p-2 border rounded"
+              />
+              <div className="space-y-2">
+                {pollOptions.map((opt, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      value={opt}
+                      onChange={(e) => updateOption(idx, e.target.value)}
+                      placeholder={`Option ${idx + 1}`}
+                      className="flex-1 p-2 border rounded"
+                    />
+                    {pollOptions.length > 2 && (
+                      <button
+                        onClick={() => removeOption(idx)}
+                        className="text-sm px-2 py-1 bg-red-500 text-white rounded"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button onClick={addOption} className="text-sm px-3 py-1 bg-green-500 text-white rounded">
+                  Add option
+                </button>
+              </div>
+
+              <div>
+                <label className="text-sm block mb-1">Group</label>
+                <select
+                  value={pollGroup}
+                  onChange={(e) => setPollGroup(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  {groups.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-3">
+                <Button variant="ghost" onClick={() => setShowPollModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={submitPoll}>Create Poll</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

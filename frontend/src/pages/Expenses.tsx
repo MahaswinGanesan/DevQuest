@@ -80,19 +80,19 @@ const Expenses = () => {
           <Card className="shadow-md border-0">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-2">You Owe</p>
-              <p className="text-3xl font-bold text-destructive">₹124.50</p>
+              <p className="text-3xl font-bold text-destructive">$124.50</p>
             </CardContent>
           </Card>
           <Card className="shadow-md border-0">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-2">You're Owed</p>
-              <p className="text-3xl font-bold text-secondary">₹95.00</p>
+              <p className="text-3xl font-bold text-secondary">$95.00</p>
             </CardContent>
           </Card>
           <Card className="shadow-md border-0">
             <CardContent className="p-6">
               <p className="text-sm text-muted-foreground mb-2">Total Balance</p>
-              <p className="text-3xl font-bold text-accent">₹29.50</p>
+              <p className="text-3xl font-bold text-accent">$29.50</p>
             </CardContent>
           </Card>
         </div>
@@ -132,7 +132,7 @@ const Expenses = () => {
                   <div className="text-right">
                     <p className="text-xl font-bold text-accent">${expense.amount.toFixed(2)}</p>
                     <p className="text-sm text-muted-foreground">
-                      ₹{(expense.amount / expense.split).toFixed(2)} each
+                      ${(expense.amount / expense.split).toFixed(2)} each
                     </p>
                   </div>
                 </div>

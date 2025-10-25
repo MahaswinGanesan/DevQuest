@@ -104,7 +104,7 @@ const NewExpense = () => {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (₹)</FormLabel>
+                      <FormLabel>Amount ($)</FormLabel>
                       <FormControl>
                         <Input type="number" step="1" placeholder="0" {...field} />
                       </FormControl>
